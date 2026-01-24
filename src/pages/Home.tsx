@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { eventoService } from '../services/vendaService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { Calendar, MapPin, Clock, Ticket, ArrowRight } from 'lucide-react';
+import { Calendar, Ticket, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -71,39 +71,10 @@ export default function Home() {
                 <div>
                   <p className="font-medium text-gray-900">Data do Evento</p>
                   <p className="text-gray-600">
-                    {new Date(evento.dataEvento).toLocaleDateString('pt-BR', {
+                    {new Date(evento.data).toLocaleDateString('pt-BR', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </p>
-                </div>
-              </div>
-
-              {/* Local */}
-              {evento.local && (
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-gray-900">Local</p>
-                    <p className="text-gray-600">{evento.local}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Limite de Venda */}
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-medium text-gray-900">Venda até</p>
-                  <p className="text-gray-600">
-                    {new Date(evento.limiteVendas).toLocaleDateString('pt-BR', {
-                      day: '2-digit',
-                      month: 'long',
-                      hour: '2-digit',
-                      minute: '2-digit',
                     })}
                   </p>
                 </div>
@@ -114,10 +85,10 @@ export default function Home() {
                 <Ticket className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="font-medium text-gray-900">
-                    R$ {(evento.valorPorCartela / 100).toFixed(2)} por cartela
+                    R$ {(evento.valorCartela).toFixed(2)} por cartela
                   </p>
                   <p className="text-sm text-gray-500">
-                    Limite: {evento.maxCartelasPorComprador} cartelas por pessoa
+                    Disponível para compra
                   </p>
                 </div>
               </div>

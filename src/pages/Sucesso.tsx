@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { vendaService } from '../services/vendaService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { CheckCircle, Mail, Calendar, MapPin, Ticket, Home as HomeIcon } from 'lucide-react';
+import { CheckCircle, Mail, Calendar, Ticket, Home as HomeIcon } from 'lucide-react';
 
 export default function Sucesso() {
   const { vendaId } = useParams<{ vendaId: string }>();
@@ -28,11 +28,23 @@ export default function Sucesso() {
     return <LoadingSpinner text="Carregando confirmação..." />;
   }
 
-  if (!venda || venda.status !== 'PAGO') {
+  if (!venda || venda.status !== 'pago') {
     return (
       <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-800">Venda não encontrada ou ainda não confirmada.</p>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium mb-2">
+            {venda?.status === 'pendente' 
+              ? 'Pagamento ainda pendente'
+              : 'Venda não encontrada ou ainda não confirmada'}
+          </p>
+          {venda?.status === 'pendente' && (
+            <button
+              onClick={() => navigate(`/pagamento/${vendaId}`)}
+              className="mt-3 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700"
+            >
+              Voltar para Pagamento
+            </button>
+          )}
         </div>
       </div>
     );
@@ -66,27 +78,14 @@ export default function Sucesso() {
             <div>
               <p className="font-medium text-gray-900">{venda.evento.nome}</p>
               <p className="text-sm text-gray-600">
-                {new Date(venda.evento.dataEvento).toLocaleDateString('pt-BR', {
+                {new Date(venda.evento.data).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
                 })}
               </p>
             </div>
           </div>
-
-          {/* Local */}
-          {venda.evento.local && (
-            <div className="flex items-start gap-3 pb-4 border-b">
-              <MapPin className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-gray-900">Local do Evento</p>
-                <p className="text-sm text-gray-600">{venda.evento.local}</p>
-              </div>
-            </div>
-          )}
 
           {/* Cartelas */}
           <div className="flex items-start gap-3 pb-4 border-b">

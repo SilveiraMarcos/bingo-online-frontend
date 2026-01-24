@@ -4,6 +4,8 @@ export interface Evento {
   data: string;
   valorCartela: number;
   descricao?: string;
+  local?: string;
+  dataEvento?: string;
   status: 'ativo' | 'finalizado' | 'cancelado';
   cartelasDisponiveis?: number;
 }
@@ -34,7 +36,7 @@ export interface Venda {
   valorTotal: number;
   status: 'pendente' | 'processando' | 'pago' | 'cancelado' | 'expirado';
   metodoPagamento?: 'pix' | 'cartao';
-  gateway: 'cakto';
+  gateway: 'asaas';
   gatewayId?: string;
   paymentUrl?: string;
   pixQrCode?: string;
@@ -49,8 +51,10 @@ export interface CriarVendaRequest {
   nome: string;
   email: string;
   telefone?: string;
+  cpf: string;
   quantidade: number;
   eventoId: string;
+  metodoPagamento: 'PIX' | 'CREDIT_CARD';
 }
 
 export interface CriarVendaResponse {

@@ -1,13 +1,13 @@
-import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
 interface QRCodePixProps {
-  pixCode: string;
-  pixCopyPaste: string;
+  readonly qrCodeBase64: string;   // Imagem PNG em base64 do Asaas
+  readonly pixCopyPaste: string;   // Código copia e cola (payload)
+  readonly valor: number;          // Valor em reais
 }
 
-export default function QRCodePix({ pixCode, pixCopyPaste }: QRCodePixProps) {
+export default function QRCodePix({ qrCodeBase64, pixCopyPaste, valor }: QRCodePixProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -22,31 +22,39 @@ export default function QRCodePix({ pixCode, pixCopyPaste }: QRCodePixProps) {
 
   return (
     <div className="space-y-4">
+      {/* Valor */}
+      <div className="text-center">
+        <p className="text-sm text-gray-600">Valor a pagar</p>
+        <p className="text-3xl font-bold text-green-600">
+          R$ {valor.toFixed(2)}
+        </p>
+      </div>
+
       {/* QR Code */}
       <div className="bg-white p-6 rounded-lg flex justify-center">
-        <QRCodeSVG
-          value={pixCode}
-          size={256}
-          level="M"
-          includeMargin={true}
+        <img
+          src={`data:image/png;base64,${qrCodeBase64}`}
+          alt="QR Code PIX"
+          className="w-64 h-64"
         />
       </div>
 
       {/* Pix Copia e Cola */}
       <div className="bg-gray-50 p-4 rounded-lg">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="pix-code" className="block text-sm font-medium text-gray-700 mb-2">
           Código Pix Copia e Cola:
         </label>
         <div className="flex gap-2">
           <input
+            id="pix-code"
             type="text"
             value={pixCopyPaste}
             readOnly
-            className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-mono"
+            className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-sm font-mono truncate"
           />
           <button
             onClick={handleCopy}
-            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors flex items-center gap-2 whitespace-nowrap"
           >
             {copied ? (
               <>
@@ -73,6 +81,11 @@ export default function QRCodePix({ pixCode, pixCopyPaste }: QRCodePixProps) {
           <li>Confirme o pagamento</li>
         </ol>
       </div>
+
+      {/* Aviso */}
+      <p className="text-xs text-center text-gray-500">
+        Após o pagamento, aguarde alguns segundos para a confirmação automática.
+      </p>
     </div>
   );
 }

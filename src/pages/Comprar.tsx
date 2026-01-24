@@ -13,6 +13,12 @@ const compradorSchema = z.object({
   telefone: z
     .string()
     .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Telefone inválido (XX) XXXXX-XXXX'),
+  cpf: z
+    .string()
+    .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido (XXX.XXX.XXX-XX)'),
+  metodoPagamento: z.enum(['PIX', 'CREDIT_CARD'], {
+    required_error: 'Selecione um método de pagamento',
+  }),
   quantidade: z.number().min(1, 'Selecione pelo menos 1 cartela'),
 });
 
@@ -31,10 +37,12 @@ export default function Comprar() {
     resolver: zodResolver(compradorSchema),
     defaultValues: {
       quantidade: 1,
+      metodoPagamento: 'PIX', // PIX como padrão
     },
   });
 
   const quantidade = watch('quantidade');
+  const metodoPagamento = watch('metodoPagamento');
 
   // Carregar dados do evento
   const { data: evento, isLoading: loadingEvento } = useQuery({
@@ -54,7 +62,11 @@ export default function Comprar() {
   const createVendaMutation = useMutation({
     mutationFn: vendaService.criar,
     onSuccess: (data) => {
-      navigate(`/pagamento/${data.venda._id}`);
+      // Navegar para página de pagamento interna com QR Code PIX
+      navigate(`/pagamento/${data.vendaId}`);
+    },
+    onError: (error: any) => {
+      console.error('Erro ao criar venda:', error);
     },
   });
 
@@ -63,11 +75,11 @@ export default function Comprar() {
 
     createVendaMutation.mutate({
       eventoId,
-      comprador: {
-        nome: data.nome,
-        email: data.email,
-        telefone: data.telefone,
-      },
+      nome: data.nome,
+      email: data.email,
+      telefone: data.telefone,
+      cpf: data.cpf,
+      metodoPagamento: data.metodoPagamento,
       quantidade: data.quantidade,
     });
   };
@@ -81,6 +93,22 @@ export default function Comprar() {
       value = `(${value.slice(0, 2)}) ${value.slice(2, 7)}-${value.slice(7)}`;
     } else if (value.length > 2) {
       value = `(${value.slice(0, 2)}) ${value.slice(2)}`;
+    }
+
+    e.target.value = value;
+  };
+
+  // Formatar CPF enquanto digita
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 11) value = value.slice(0, 11);
+
+    if (value.length > 8) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6, 9)}-${value.slice(9)}`;
+    } else if (value.length > 6) {
+      value = `${value.slice(0, 3)}.${value.slice(3, 6)}.${value.slice(6)}`;
+    } else if (value.length > 3) {
+      value = `${value.slice(0, 3)}.${value.slice(3)}`;
     }
 
     e.target.value = value;
@@ -100,7 +128,7 @@ export default function Comprar() {
     );
   }
 
-  const valorTotal = (evento.valorPorCartela / 100) * (quantidade || 0);
+  const valorTotal = (evento.valorCartela) * (quantidade || 0);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -122,17 +150,16 @@ export default function Comprar() {
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>
             Data:{' '}
-            {new Date(evento.dataEvento).toLocaleDateString('pt-BR', {
+            {new Date(evento.data).toLocaleDateString('pt-BR', {
               day: '2-digit',
               month: 'long',
               year: 'numeric',
             })}
           </span>
-          {evento.local && <span>• {evento.local}</span>}
         </div>
         <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
           <p className="text-purple-900 font-medium">
-            Cartelas disponíveis: {cartelasDisponiveis || 0}
+            Cartelas disponíveis: {cartelasDisponiveis?.total || 0}
           </p>
         </div>
       </div>
@@ -196,6 +223,71 @@ export default function Comprar() {
             )}
           </div>
 
+          {/* CPF */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <User className="w-4 h-4 inline mr-2" />
+              CPF
+            </label>
+            <input
+              type="text"
+              {...register('cpf')}
+              onChange={handleCpfChange}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              placeholder="000.000.000-00"
+            />
+            {errors.cpf && (
+              <p className="text-red-600 text-sm mt-1">{errors.cpf.message}</p>
+            )}
+          </div>
+
+          {/* Método de Pagamento */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <CreditCard className="w-4 h-4 inline mr-2" />
+              Método de Pagamento
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <label className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                metodoPagamento === 'PIX' 
+                  ? 'border-purple-600 bg-purple-50' 
+                  : 'border-gray-300 hover:border-purple-300'
+              }`}>
+                <input
+                  type="radio"
+                  value="PIX"
+                  {...register('metodoPagamento')}
+                  className="sr-only"
+                />
+                <div className="text-center">
+                  <div className="text-2xl mb-1">💳</div>
+                  <div className="font-medium text-gray-900">PIX</div>
+                  <div className="text-xs text-gray-500">Aprovação instantânea</div>
+                </div>
+              </label>
+              <label className={`flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                metodoPagamento === 'CREDIT_CARD' 
+                  ? 'border-purple-600 bg-purple-50' 
+                  : 'border-gray-300 hover:border-purple-300'
+              }`}>
+                <input
+                  type="radio"
+                  value="CREDIT_CARD"
+                  {...register('metodoPagamento')}
+                  className="sr-only"
+                />
+                <div className="text-center">
+                  <div className="text-2xl mb-1">💳</div>
+                  <div className="font-medium text-gray-900">Cartão</div>
+                  <div className="text-xs text-gray-500">Crédito ou Débito</div>
+                </div>
+              </label>
+            </div>
+            {errors.metodoPagamento && (
+              <p className="text-red-600 text-sm mt-1">{errors.metodoPagamento.message}</p>
+            )}
+          </div>
+
           {/* Quantidade */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -206,12 +298,11 @@ export default function Comprar() {
               type="number"
               {...register('quantidade', { valueAsNumber: true })}
               min={1}
-              max={Math.min(evento.maxCartelasPorComprador, cartelasDisponiveis || 0)}
+              max={cartelasDisponiveis?.total || 0}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Máximo: {Math.min(evento.maxCartelasPorComprador, cartelasDisponiveis || 0)}{' '}
-              cartelas
+              Máximo: {cartelasDisponiveis?.total || 0} cartelas
             </p>
             {errors.quantidade && (
               <p className="text-red-600 text-sm mt-1">{errors.quantidade.message}</p>
@@ -230,7 +321,7 @@ export default function Comprar() {
             <div className="flex justify-between">
               <span className="text-gray-600">Valor por cartela:</span>
               <span className="font-medium">
-                R$ {(evento.valorPorCartela / 100).toFixed(2)}
+                R$ {evento.valorCartela.toFixed(2)}
               </span>
             </div>
             <div className="border-t pt-2 flex justify-between text-lg">
@@ -245,9 +336,28 @@ export default function Comprar() {
         {/* Erro da Mutation */}
         {createVendaMutation.isError && (
           <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800 text-sm">
-              Erro ao criar venda. Tente novamente.
+            <p className="text-red-800 font-medium mb-2">
+              {(createVendaMutation.error as any)?.response?.data?.message || 
+               'Erro ao criar venda. Tente novamente.'}
             </p>
+            
+            {/* Se houver venda pendente, mostrar informações e botão */}
+            {(createVendaMutation.error as any)?.response?.data?.data?.vendaId && (
+              <>
+                {(createVendaMutation.error as any)?.response?.data?.data?.expiresAt && (
+                  <p className="text-red-700 text-sm mb-3">
+                    Expira em: {new Date((createVendaMutation.error as any).response.data.data.expiresAt).toLocaleString('pt-BR')}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/pagamento/${(createVendaMutation.error as any).response.data.data.vendaId}`)}
+                  className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                >
+                  Continuar com pagamento pendente
+                </button>
+              </>
+            )}
           </div>
         )}
 
