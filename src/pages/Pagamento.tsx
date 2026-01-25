@@ -180,7 +180,7 @@ export default function Pagamento() {
           <div className="border-t pt-3 flex justify-between">
             <span className="font-semibold text-gray-900">Total:</span>
             <span className="text-xl font-bold text-purple-600">
-              R$ {(venda.valorTotal / 100).toFixed(2)}
+              R$ {(venda.valorTotal).toFixed(2)}
             </span>
           </div>
         </div>

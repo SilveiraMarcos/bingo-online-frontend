@@ -9,12 +9,14 @@ import { ArrowLeft, User, Mail, Phone, Ticket, CreditCard } from 'lucide-react';
 
 const compradorSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
-  email: z.string().email('Email inválido'),
+  email: z.string().email('Email inválido').optional().or(z.literal('')),
   telefone: z
     .string()
+    .min(1, 'Telefone é obrigatório')
     .regex(/^\(\d{2}\) \d{4,5}-\d{4}$/, 'Telefone inválido (XX) XXXXX-XXXX'),
   cpf: z
     .string()
+    .min(1, 'CPF é obrigatório')
     .regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido (XXX.XXX.XXX-XX)'),
   metodoPagamento: z.enum(['PIX', 'CREDIT_CARD'], {
     required_error: 'Selecione um método de pagamento',
@@ -192,7 +194,7 @@ export default function Comprar() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <Mail className="w-4 h-4 inline mr-2" />
-              Email
+              Email (Opcional)
             </label>
             <input
               type="email"

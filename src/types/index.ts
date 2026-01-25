@@ -22,8 +22,9 @@ export interface Cartela {
 export interface Comprador {
   _id: string;
   nome: string;
-  email: string;
-  telefone?: string;
+  email?: string;
+  telefone: string;
+  cpf: string;
 }
 
 export interface Venda {
@@ -44,13 +45,14 @@ export interface Venda {
   emailEnviado: boolean;
   expiresAt: string;
   paidAt?: string;
+  hashComprovante?: string;
   createdAt: string;
 }
 
 export interface CriarVendaRequest {
   nome: string;
-  email: string;
-  telefone?: string;
+  email?: string;
+  telefone: string;
   cpf: string;
   quantidade: number;
   eventoId: string;
