@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { vendaService } from '../services/vendaService';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { XCircle, Home as HomeIcon, RefreshCw } from 'lucide-react';
+import type { Evento } from '../types';
 
 export default function Erro() {
   const { vendaId } = useParams<{ vendaId: string }>();
@@ -28,24 +29,17 @@ export default function Erro() {
     }
 
     switch (venda.status) {
-      case 'EXPIRADO':
+      case 'expirado':
         return {
           titulo: 'Pagamento Expirado',
           descricao:
             'O prazo para realizar o pagamento expirou. A venda foi cancelada automaticamente.',
           podeRetentar: true,
         };
-      case 'CANCELADO':
+      case 'cancelado':
         return {
           titulo: 'Pagamento Cancelado',
           descricao: 'Esta venda foi cancelada.',
-          podeRetentar: true,
-        };
-      case 'ERRO':
-        return {
-          titulo: 'Erro no Pagamento',
-          descricao:
-            'Ocorreu um erro ao processar seu pagamento. Por favor, tente novamente.',
           podeRetentar: true,
         };
       default:
@@ -80,21 +74,25 @@ export default function Erro() {
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Evento:</span>
-              <span className="font-medium">{venda.evento.nome}</span>
+              <span className="font-medium">
+                {typeof venda.eventoId === 'object' ? venda.eventoId.nome : 'Evento'}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Quantidade:</span>
-              <span className="font-medium">{venda.cartelas.length} cartela(s)</span>
+              <span className="font-medium">{venda.quantidade} cartela(s)</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Comprador:</span>
-              <span className="font-medium">{venda.comprador.nome}</span>
+              <span className="font-medium">
+                {typeof venda.compradorId === 'object' ? venda.compradorId.nome : 'Comprador'}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Status:</span>
               <span
                 className={`font-medium ${
-                  venda.status === 'EXPIRADO' || venda.status === 'CANCELADO'
+                  venda.status === 'expirado' || venda.status === 'cancelado'
                     ? 'text-red-600'
                     : 'text-yellow-600'
                 }`}
@@ -130,9 +128,9 @@ export default function Erro() {
 
       {/* Botões de Ação */}
       <div className="space-y-3">
-        {podeRetentar && venda && (
+        {podeRetentar && venda && typeof venda.eventoId === 'object' && venda.eventoId._id && (
           <button
-            onClick={() => navigate(`/comprar/${venda.evento._id}`)}
+            onClick={() => navigate(`/comprar/${(venda.eventoId as Evento)._id}`)}
             className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 font-medium"
           >
             <RefreshCw className="w-5 h-5" />

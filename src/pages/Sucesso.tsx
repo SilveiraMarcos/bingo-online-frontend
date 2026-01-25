@@ -76,9 +76,11 @@ export default function Sucesso() {
           <div className="flex items-start gap-3 pb-4 border-b">
             <Calendar className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-gray-900">{venda.evento.nome}</p>
+              <p className="font-medium text-gray-900">
+                {typeof venda.eventoId === 'object' ? venda.eventoId.nome : 'Evento'}
+              </p>
               <p className="text-sm text-gray-600">
-                {new Date(venda.evento.data).toLocaleDateString('pt-BR', {
+                {typeof venda.eventoId === 'object' && new Date(venda.eventoId.data).toLocaleDateString('pt-BR', {
                   day: '2-digit',
                   month: 'long',
                   year: 'numeric',
@@ -92,19 +94,22 @@ export default function Sucesso() {
             <Ticket className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="font-medium text-gray-900 mb-2">
-                Suas Cartelas ({venda.cartelas.length})
+                Suas Cartelas ({Array.isArray(venda.cartelas) ? venda.cartelas.length : 0})
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {venda.cartelas.map((cartela) => (
-                  <div
-                    key={cartela._id}
-                    className="bg-purple-50 border border-purple-200 rounded px-3 py-2 text-center"
-                  >
-                    <span className="font-mono text-sm font-medium text-purple-900">
-                      {cartela.codigo}
-                    </span>
-                  </div>
-                ))}
+                {Array.isArray(venda.cartelas) && venda.cartelas.map((cartela) => {
+                  if (typeof cartela === 'string') return null;
+                  return (
+                    <div
+                      key={cartela._id}
+                      className="bg-purple-50 border border-purple-200 rounded px-3 py-2 text-center"
+                    >
+                      <span className="font-mono text-sm font-medium text-purple-900">
+                        {cartela.codigo}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -113,9 +118,15 @@ export default function Sucesso() {
           <div className="flex items-start gap-3 pb-4 border-b">
             <Mail className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-gray-900">{venda.comprador.nome}</p>
-              <p className="text-sm text-gray-600">{venda.comprador.email}</p>
-              <p className="text-sm text-gray-600">{venda.comprador.telefone}</p>
+              <p className="font-medium text-gray-900">
+                {typeof venda.compradorId === 'object' ? venda.compradorId.nome : 'Comprador'}
+              </p>
+              <p className="text-sm text-gray-600">
+                {typeof venda.compradorId === 'object' ? venda.compradorId.email : ''}
+              </p>
+              <p className="text-sm text-gray-600">
+                {typeof venda.compradorId === 'object' ? venda.compradorId.telefone : ''}
+              </p>
             </div>
           </div>
 
@@ -133,7 +144,7 @@ export default function Sucesso() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
         <h4 className="font-semibold text-blue-900 mb-2">📧 Verifique seu Email</h4>
         <p className="text-sm text-blue-800 mb-4">
-          Enviamos suas cartelas para <strong>{venda.comprador.email}</strong>
+          Enviamos suas cartelas para <strong>{typeof venda.compradorId === 'object' ? venda.compradorId.email : 'seu email'}</strong>
         </p>
         <p className="text-sm text-blue-800 mb-4">
           Não recebeu? Verifique sua caixa de spam ou reenvie o email.
