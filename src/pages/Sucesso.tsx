@@ -198,6 +198,20 @@ Pago em: ${venda.paidAt ? new Date(venda.paidAt).toLocaleString('pt-BR') : 'N/A'
               <p className="font-medium text-gray-900 mb-3">
                 Suas Cartelas ({Array.isArray(venda.cartelas) ? venda.cartelas.length : 0})
               </p>
+              
+              {/* Botão para baixar todas as cartelas */}
+              {vendaId && (
+                <a
+                  href={vendaService.getDownloadUrl(vendaId)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-3 rounded-lg hover:bg-purple-700 transition-colors font-medium mb-4 w-full"
+                >
+                  <Download className="w-5 h-5" />
+                  Baixar Todas as Cartelas (PDF)
+                </a>
+              )}
+
               <div className="space-y-2">
                 {Array.isArray(venda.cartelas) && venda.cartelas.map((cartela) => {
                   if (typeof cartela === 'string') return null;
@@ -211,12 +225,11 @@ Pago em: ${venda.paidAt ? new Date(venda.paidAt).toLocaleString('pt-BR') : 'N/A'
                           {cartela.codigo}
                         </span>
                       </div>
-                      {cartela.arquivoUrl && (
+                      {vendaId && (
                         <a
-                          href={cartela.arquivoUrl}
+                          href={vendaService.getCartelaDownloadUrl(vendaId, cartela._id)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          download
                           className="flex items-center gap-2 bg-purple-600 text-white px-3 py-1.5 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                         >
                           <Download className="w-4 h-4" />
@@ -257,7 +270,7 @@ Pago em: ${venda.paidAt ? new Date(venda.paidAt).toLocaleString('pt-BR') : 'N/A'
           <div className="flex justify-between items-center pt-2">
             <span className="text-lg font-semibold text-gray-900">Total Pago:</span>
             <span className="text-2xl font-bold text-purple-600">
-              R$ {(venda.valorTotal / 100).toFixed(2)}
+              R$ {(venda.valorTotal).toFixed(2)}
             </span>
           </div>
         </div>

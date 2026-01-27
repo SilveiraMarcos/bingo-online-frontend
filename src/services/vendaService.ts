@@ -53,4 +53,20 @@ export const vendaService = {
   reenviarEmail: async (id: string): Promise<void> => {
     await api.post(`/vendas/${id}/reenviar-email`);
   },
+
+  /**
+   * Retorna a URL para download de todas as cartelas de uma venda
+   */
+  getDownloadUrl: (vendaId: string): string => {
+    const baseUrl = api.defaults.baseURL || '';
+    return `${baseUrl}/vendas/${vendaId}/cartelas/download`;
+  },
+
+  /**
+   * Retorna a URL para download de uma cartela específica
+   */
+  getCartelaDownloadUrl: (vendaId: string, cartelaId: string): string => {
+    const baseUrl = api.defaults.baseURL || '';
+    return `${baseUrl}/vendas/${vendaId}/cartelas/${cartelaId}/download`;
+  },
 };
