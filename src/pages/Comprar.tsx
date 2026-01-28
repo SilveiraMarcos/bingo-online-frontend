@@ -3,9 +3,11 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useState, useEffect } from 'react';
 import { eventoService, vendaService } from '../services/vendaService';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { ArrowLeft, User, Mail, Phone, Ticket, CreditCard } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Ticket, CreditCard, Check, Edit2 } from 'lucide-react';
+import type { Cartela } from '../types';
 
 const compradorSchema = z.object({
   nome: z.string().min(3, 'Nome deve ter pelo menos 3 caracteres'),
@@ -21,7 +23,6 @@ const compradorSchema = z.object({
   metodoPagamento: z.enum(['PIX', 'CREDIT_CARD'], {
     required_error: 'Selecione um método de pagamento',
   }),
-  quantidade: z.number().min(1, 'Selecione pelo menos 1 cartela'),
 });
 
 type CompradorFormData = z.infer<typeof compradorSchema>;
@@ -29,6 +30,29 @@ type CompradorFormData = z.infer<typeof compradorSchema>;
 export default function Comprar() {
   const { eventoId } = useParams<{ eventoId: string }>();
   const navigate = useNavigate();
+
+  // Recuperar cartelas selecionadas do sessionStorage
+  const [cartelasSelecionadasIds, setCartelasSelecionadasIds] = useState<string[]>([]);
+  
+  useEffect(() => {
+    const cartelasSalvas = sessionStorage.getItem('cartelasSelecionadas');
+    if (cartelasSalvas) {
+      try {
+        const ids = JSON.parse(cartelasSalvas);
+        if (Array.isArray(ids) && ids.length > 0) {
+          setCartelasSelecionadasIds(ids);
+        } else {
+          // Se não houver cartelas selecionadas, redirecionar para seleção
+          navigate(`/selecionar/${eventoId}`);
+        }
+      } catch {
+        navigate(`/selecionar/${eventoId}`);
+      }
+    } else {
+      // Se não houver cartelas selecionadas, redirecionar para seleção
+      navigate(`/selecionar/${eventoId}`);
+    }
+  }, [eventoId, navigate]);
 
   const {
     register,
@@ -38,12 +62,10 @@ export default function Comprar() {
   } = useForm<CompradorFormData>({
     resolver: zodResolver(compradorSchema),
     defaultValues: {
-      quantidade: 1,
       metodoPagamento: 'PIX', // PIX como padrão
     },
   });
 
-  const quantidade = watch('quantidade');
   const metodoPagamento = watch('metodoPagamento');
 
   // Carregar dados do evento
@@ -53,17 +75,26 @@ export default function Comprar() {
     enabled: !!eventoId,
   });
 
-  // Verificar cartelas disponíveis
-  const { data: cartelasDisponiveis, isLoading: loadingCartelas } = useQuery({
+  // Carregar dados das cartelas selecionadas
+  const { data: cartelasData, isLoading: loadingCartelas } = useQuery({
     queryKey: ['cartelas-disponiveis', eventoId],
-    queryFn: () => eventoService.getCartelasDisponiveis(eventoId!),
+    queryFn: () => eventoService.getCartelasDisponiveis(eventoId!, 500),
     enabled: !!eventoId,
   });
+
+  // Filtrar apenas as cartelas selecionadas
+  const cartelasSelecionadas = cartelasData?.cartelas?.filter(
+    (c: Cartela) => cartelasSelecionadasIds.includes(c._id)
+  ) || [];
+
+  const quantidade = cartelasSelecionadasIds.length;
 
   // Mutation para criar venda
   const createVendaMutation = useMutation({
     mutationFn: vendaService.criar,
     onSuccess: (data) => {
+      // Limpar seleção de cartelas após sucesso
+      sessionStorage.removeItem('cartelasSelecionadas');
       // Navegar para página de pagamento interna com QR Code PIX
       navigate(`/pagamento/${data.vendaId}`);
     },
@@ -73,7 +104,7 @@ export default function Comprar() {
   });
 
   const onSubmit = (data: CompradorFormData) => {
-    if (!eventoId) return;
+    if (!eventoId || cartelasSelecionadasIds.length === 0) return;
 
     createVendaMutation.mutate({
       eventoId,
@@ -82,7 +113,8 @@ export default function Comprar() {
       telefone: data.telefone,
       cpf: data.cpf,
       metodoPagamento: data.metodoPagamento,
-      quantidade: data.quantidade,
+      quantidade: cartelasSelecionadasIds.length,
+      cartelasIds: cartelasSelecionadasIds,
     });
   };
 
@@ -136,11 +168,11 @@ export default function Comprar() {
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       {/* Botão Voltar */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate(`/selecionar/${eventoId}`)}
         className="flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6"
       >
         <ArrowLeft className="w-5 h-5" />
-        Voltar para eventos
+        Voltar para seleção de cartelas
       </button>
 
       {/* Cabeçalho */}
@@ -159,10 +191,39 @@ export default function Comprar() {
             })}
           </span>
         </div>
+        
+        {/* Cartelas Selecionadas */}
         <div className="mt-4 bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p className="text-purple-900 font-medium">
-            Cartelas disponíveis: {cartelasDisponiveis?.total || 0}
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-purple-900 font-medium flex items-center gap-2">
+              <Ticket className="w-5 h-5" />
+              {quantidade} cartela(s) selecionada(s)
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate(`/selecionar/${eventoId}`)}
+              className="text-sm text-purple-600 hover:text-purple-800 flex items-center gap-1"
+            >
+              <Edit2 className="w-4 h-4" />
+              Alterar seleção
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {cartelasSelecionadas.slice(0, 10).map((cartela: Cartela) => (
+              <span
+                key={cartela._id}
+                className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-lg text-sm font-medium"
+              >
+                <Check className="w-3 h-3" />
+                #{cartela.codigo}
+              </span>
+            ))}
+            {cartelasSelecionadas.length > 10 && (
+              <span className="inline-flex items-center px-2 py-1 bg-purple-200 text-purple-800 rounded-lg text-sm font-medium">
+                +{cartelasSelecionadas.length - 10} mais
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -289,27 +350,6 @@ export default function Comprar() {
               <p className="text-red-600 text-sm mt-1">{errors.metodoPagamento.message}</p>
             )}
           </div>
-
-          {/* Quantidade */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Ticket className="w-4 h-4 inline mr-2" />
-              Quantidade de Cartelas
-            </label>
-            <input
-              type="number"
-              {...register('quantidade', { valueAsNumber: true })}
-              min={1}
-              max={cartelasDisponiveis?.total || 0}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Máximo: {cartelasDisponiveis?.total || 0} cartelas
-            </p>
-            {errors.quantidade && (
-              <p className="text-red-600 text-sm mt-1">{errors.quantidade.message}</p>
-            )}
-          </div>
         </div>
 
         {/* Resumo do Pedido */}
@@ -318,7 +358,7 @@ export default function Comprar() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600">Quantidade:</span>
-              <span className="font-medium">{quantidade || 0} cartela(s)</span>
+              <span className="font-medium">{quantidade} cartela(s)</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Valor por cartela:</span>

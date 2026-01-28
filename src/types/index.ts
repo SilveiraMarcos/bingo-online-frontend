@@ -57,6 +57,7 @@ export interface CriarVendaRequest {
   quantidade: number;
   eventoId: string;
   metodoPagamento: 'PIX' | 'CREDIT_CARD';
+  cartelasIds?: string[]; // IDs das cartelas selecionadas pelo usuário
 }
 
 export interface CriarVendaResponse {

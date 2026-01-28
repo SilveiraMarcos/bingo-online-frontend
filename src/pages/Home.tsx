@@ -93,12 +93,12 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Botão de Compra */}
+              {/* Botão para Selecionar Cartelas */}
               <button
-                onClick={() => navigate(`/comprar/${evento._id}`)}
+                onClick={() => navigate(`/selecionar/${evento._id}`)}
                 className="w-full mt-4 bg-purple-600 text-white py-3 px-4 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2 font-medium"
               >
-                Comprar Cartelas
+                Escolher Cartelas
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
