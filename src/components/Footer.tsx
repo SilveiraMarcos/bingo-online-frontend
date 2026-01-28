@@ -7,7 +7,7 @@ export default function Footer() {
             © {new Date().getFullYear()} Bingo Paróquia. Todos os direitos reservados.
           </p>
           <p className="text-xs text-gray-500 mt-2">
-            Pagamentos processados com segurança via Cakto
+            Pagamentos processados com segurança via Asaas
           </p>
         </div>
       </div>
